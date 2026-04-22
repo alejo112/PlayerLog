@@ -90,6 +90,9 @@ public class CsvStorage {
         long minutes = remainingAfterHours / 60;
         long seconds = remainingAfterHours % 60;
 
-        return days + ":" + hours + ":" + minutes + ":" + seconds;
+        return days + ":"
+                + twoDigits((int) hours) + ":"
+                + twoDigits((int) minutes) + ":"
+                + twoDigits((int) seconds);
     }
 }
