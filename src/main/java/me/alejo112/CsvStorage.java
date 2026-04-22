@@ -31,8 +31,8 @@ public class CsvStorage {
         }
     }
 
-    public void appendLog(UUID uuid, long loginMillis, String ip,
-                          long onlineTimeSeconds) {
+    public void appendLog(UUID uuid, String playerName, long loginMillis,
+                          String ip, long onlineTimeSeconds) {
         LocalDateTime loginDateTime = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(loginMillis),
                 ZoneId.systemDefault()
@@ -48,20 +48,21 @@ public class CsvStorage {
                 writer.newLine();
             }
 
-            String day = twoDigits(loginDateTime.getDayOfMonth());
-            String month = twoDigits(loginDateTime.getMonthValue());
-            String year = twoDigits(loginDateTime.getYear() % 100);
+            String date = twoDigits(loginDateTime.getDayOfMonth())
+                    + "/" + twoDigits(loginDateTime.getMonthValue())
+                    + "/" + twoDigits(loginDateTime.getYear() % 100);
 
             String hour = twoDigits(loginDateTime.getHour())
                     + ":" + twoDigits(loginDateTime.getMinute())
                     + ":" + twoDigits(loginDateTime.getSecond());
 
-            String line = day + ","
-                    + month + ","
-                    + year + ","
+            String formattedOnlineTime = formatOnlineTime(onlineTimeSeconds);
+
+            String line = playerName + ","
+                    + date + ","
                     + hour + ","
                     + ip + ","
-                    + onlineTimeSeconds;
+                    + formattedOnlineTime;
 
             writer.write(line);
             writer.newLine();
@@ -77,5 +78,18 @@ public class CsvStorage {
             return "0" + value;
         }
         return String.valueOf(value);
+    }
+
+    private String formatOnlineTime(long totalSeconds) {
+        long days = totalSeconds / 86400;
+        long remainingAfterDays = totalSeconds % 86400;
+
+        long hours = remainingAfterDays / 3600;
+        long remainingAfterHours = remainingAfterDays % 3600;
+
+        long minutes = remainingAfterHours / 60;
+        long seconds = remainingAfterHours % 60;
+
+        return days + ":" + hours + ":" + minutes + ":" + seconds;
     }
 }

@@ -34,7 +34,8 @@ public class ConnectionListener implements Listener {
 
         SessionData sessionData = new SessionData(
                 System.currentTimeMillis(),
-                ip
+                ip,
+                player.getName()
         );
 
         activeSessions.put(player.getUniqueId(), sessionData);
@@ -50,7 +51,7 @@ public class ConnectionListener implements Listener {
         saveSession(event.getPlayer());
     }
 
-    private void saveSession(Player player) {
+    public void saveSession(Player player) {
         UUID uuid = player.getUniqueId();
         SessionData sessionData = activeSessions.remove(uuid);
 
@@ -63,6 +64,7 @@ public class ConnectionListener implements Listener {
 
         csvStorage.appendLog(
                 uuid,
+                sessionData.getPlayerName(),
                 sessionData.getLoginMillis(),
                 sessionData.getIpAddress(),
                 onlineTimeSeconds
