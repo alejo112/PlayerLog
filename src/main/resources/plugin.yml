@@ -1,0 +1,5 @@
+name: PlayerLog
+version: 1.0
+main: me.alejo112.playerlog.PlayerLog
+author: alejo112
+description: Logs player connections
