@@ -6,9 +6,12 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class CsvStorage {
@@ -31,8 +34,8 @@ public class CsvStorage {
         }
     }
 
-    public void appendLog(UUID uuid, String playerName, long loginMillis,
-                          String ip, long onlineTimeSeconds) {
+    public void appendPendingLog(UUID uuid, String playerName, long loginMillis,
+                          String ip) {
         LocalDateTime loginDateTime = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(loginMillis),
                 ZoneId.systemDefault()
@@ -44,25 +47,16 @@ public class CsvStorage {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(playerFile, true))) {
 
             if (newFile) {
-                writer.write("DD,MM,YY,Hour,IP,ONLINE_TIME");
+                writer.write("NAME,DATE,HOUR,IP,ONLINE_TIME");
                 writer.newLine();
             }
 
-            String date = twoDigits(loginDateTime.getDayOfMonth())
-                    + "/" + twoDigits(loginDateTime.getMonthValue())
-                    + "/" + twoDigits(loginDateTime.getYear() % 100);
-
-            String hour = twoDigits(loginDateTime.getHour())
-                    + ":" + twoDigits(loginDateTime.getMinute())
-                    + ":" + twoDigits(loginDateTime.getSecond());
-
-            String formattedOnlineTime = formatOnlineTime(onlineTimeSeconds);
-
-            String line = playerName + ","
-                    + date + ","
-                    + hour + ","
-                    + ip + ","
-                    + formattedOnlineTime;
+            String line = buildLine(
+                    playerName,
+                    loginDateTime,
+                    ip,
+                    "PENDING"
+            );
 
             writer.write(line);
             writer.newLine();
@@ -71,6 +65,73 @@ public class CsvStorage {
             plugin.getLogger().severe("Could not write log for UUID "
                     + uuid + ": " + exception.getMessage());
         }
+    }
+
+    public void completeLastPendingLog(UUID uuid, String playerName,
+                                       long loginMillis, String ip,
+                                       long onlineTimeSeconds) {
+        File playerFile = new File(logsFolder, uuid.toString() + ".csv");
+
+        if (!playerFile.exists()) {
+            plugin.getLogger().warning("Could not complete log for UUID "
+                    + uuid + " because file does not exist.");
+            return;
+        }
+
+        LocalDateTime loginDateTime = LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(loginMillis),
+                ZoneId.systemDefault()
+        );
+
+        String pendingLine = buildLine(
+                playerName,
+                loginDateTime,
+                ip,
+                "PENDING"
+        );
+
+        String completedLine = buildLine(
+                playerName,
+                loginDateTime,
+                ip,
+                formatOnlineTime(onlineTimeSeconds)
+        );
+
+        try {
+            List<String> lines = Files.readAllLines(playerFile.toPath());
+            List<String> updatedLines = new ArrayList<>(lines);
+
+            for (int i = updatedLines.size() - 1; i >= 0; i--) {
+                if (updatedLines.get(i).equals(pendingLine)) {
+                    updatedLines.set(i, completedLine);
+                    Files.write(playerFile.toPath(), updatedLines);
+                    return;
+                }
+            }
+
+            plugin.getLogger().warning("No pending entry found to complete for UUID " + uuid);
+
+        } catch (IOException exception) {
+            plugin.getLogger().severe("Could not complete log for UUID "
+                    + uuid + ": " + exception.getMessage());
+        }
+    }
+
+    private String buildLine(String playerName, LocalDateTime dateTime,
+                             String ip, String onlineTime) {
+        String date = twoDigits(dateTime.getDayOfMonth())
+                + "/" + twoDigits(dateTime.getMonthValue())
+                + "/" + twoDigits(dateTime.getYear() % 100);
+
+        String hour = twoDigits(dateTime.getHour())
+                + ":" + twoDigits(dateTime.getMinute())
+                + ":" + twoDigits(dateTime.getSecond());
+
+        return playerName + ","
+                + date + ","
+                + hour + ","
+                + ip + ","
+                + onlineTime;
     }
 
     private String twoDigits(int value) {

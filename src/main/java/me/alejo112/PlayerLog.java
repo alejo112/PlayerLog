@@ -12,7 +12,6 @@ public class PlayerLog extends JavaPlugin {
     private CsvStorage csvStorage;
     private ConnectionListener connectionListener;
 
-
     @Override
     public void onEnable() {
         saveDefaultConfig();

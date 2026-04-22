@@ -39,6 +39,13 @@ public class ConnectionListener implements Listener {
         );
 
         activeSessions.put(player.getUniqueId(), sessionData);
+
+        csvStorage.appendPendingLog(
+                player.getUniqueId(),
+                player.getName(),
+                System.currentTimeMillis(),
+                ip
+        );
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
